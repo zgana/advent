@@ -2,3 +2,7 @@
 stage/
 _scratch.ipynb
 _template.ipynb
+
+# rust extras
+target/
+template.rs
