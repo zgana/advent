@@ -2,7 +2,7 @@
 name = "rs"
 version = "0.1.0"
 edition = "2021"
-default-run = "day07"
+default-run = "day08"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -10,8 +10,13 @@ default-run = "day07"
 anyhow = "1.0.93"
 itertools = "0.13.0"
 nalgebra = "0.33.2"
+num = "0.4.3"
 regex = "1.11.1"
 
+
+[[bin]]
+name = "day08"
+path = "src/day08.rs"
 
 [[bin]]
 name = "day07"
