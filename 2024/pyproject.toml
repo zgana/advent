@@ -8,15 +8,14 @@ dependencies = [
     "numpy",
     "pandas",
     "scipy",
-
     "matplotlib",
     "seaborn",
-
     "bokeh",
     "hvplot",
     "panel",
-
     "ipykernel",
     "ipywidgets",
     "tqdm",
+    "sympy>=1.13.3",
+    "ipython>=8.30.0",
 ]
