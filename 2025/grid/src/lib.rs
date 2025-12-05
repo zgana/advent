@@ -8,7 +8,7 @@ where
 {
     width: usize,
     height: usize,
-    pub elems: Vec<T>,
+    elems: Vec<T>,
 }
 
 #[derive(Debug, Clone)]
