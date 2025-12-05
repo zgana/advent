@@ -2,3 +2,8 @@
 stage/
 _scratch.ipynb
 _template.ipynb
+
+# rust
+Cargo*
+src/
+target/
