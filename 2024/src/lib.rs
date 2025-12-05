@@ -7,7 +7,7 @@ pub mod grid {
     use anyhow::Result;
     use itertools::Itertools;
 
-    #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub struct Loc(pub i32, pub i32);
 
     impl Loc {
@@ -47,6 +47,10 @@ pub mod grid {
             self.0 as u32
         }
 
+        pub fn row_usize(&self) -> usize {
+            self.0 as usize
+        }
+
         pub fn col(&self) -> i32 {
             self.1
         }
@@ -54,9 +58,19 @@ pub mod grid {
         pub fn col_u32(&self) -> u32 {
             self.1 as u32
         }
+
+        pub fn col_usize(&self) -> usize {
+            self.1 as usize
+        }
     }
 
     impl fmt::Display for Loc {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "Loc({}, {})", self.row(), self.col())
+        }
+    }
+
+    impl fmt::Debug for Loc {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "Loc({}, {})", self.row(), self.col())
         }
@@ -73,8 +87,17 @@ pub mod grid {
         pub fn nrows(&self) -> i32 {
             self.0
         }
+
         pub fn ncols(&self) -> i32 {
             self.1
+        }
+
+        pub fn rot_cw(&self) -> Self {
+            Self(self.ncols(), -self.nrows())
+        }
+
+        pub fn rot_ccw(&self) -> Self {
+            Self(-self.ncols(), self.nrows())
         }
 
         pub const UP: Self = Self(-1, 0);
@@ -157,10 +180,11 @@ pub mod grid {
         }
     }
 
+    #[derive(Clone, Debug, Eq, PartialEq)]
     pub struct Grid<T> {
-        pub nrows: u32,
-        pub ncols: u32,
-        pub data: Vec<T>,
+        nrows: u32,
+        ncols: u32,
+        data: Vec<T>,
     }
 
     impl Grid<char> {
@@ -179,6 +203,18 @@ pub mod grid {
             data
         }
     }
+
+    // impl fmt::Debug for Grid<char> {
+    //     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    //         for row in 0..self.nrows {
+    //             for col in 0..self.ncols {
+    //                 write!(f, "{}", self.at_u32(row, col))?;
+    //             }
+    //             writeln!(f)?;
+    //         }
+    //         Ok(())
+    //     }
+    // }
 
     impl fmt::Display for Grid<char> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -203,6 +239,17 @@ pub mod grid {
 
         pub fn new_usize(nrows: usize, ncols: usize) -> Self {
             Self::from_value_usize(nrows, ncols, T::default())
+        }
+
+        pub fn from_array(nrows: u32, ncols: u32, input: &[&[T]]) -> Self {
+            let mut out = Grid::new(nrows, ncols);
+            for loc in out.each_loc() {
+                let row = loc.row_usize();
+                let col = loc.col_usize();
+                *out.at_mut(loc) = input[row][col].clone();
+            }
+
+            out
         }
 
         pub fn from_value(nrows: u32, ncols: u32, value: T) -> Self {
@@ -253,6 +300,18 @@ pub mod grid {
 
         pub fn each_item_mut(&mut self) -> impl Iterator<Item = (Loc, &mut T)> {
             self.each_loc().zip(self.each_value_mut())
+        }
+
+        pub fn transform<O, F>(&self, f: F) -> Grid<O>
+        where
+            F: Fn((Loc, &T)) -> O,
+            O: Clone + Default,
+        {
+            let mut out = Grid::new(self.nrows, self.ncols);
+            for (loc, val) in self.each_item() {
+                *out.at_mut(loc) = f((loc, val)).clone();
+            }
+            out
         }
 
         pub fn at(&self, loc: Loc) -> &T {
@@ -335,6 +394,18 @@ pub mod grid {
                 .expect("index must fit in a usize")
         }
 
+        pub fn nrows(&self) -> u32 {
+            self.nrows
+        }
+
+        pub fn ncols(&self) -> u32 {
+            self.ncols
+        }
+
+        pub fn raw_data(&self) -> &Vec<T> {
+            &self.data
+        }
+
         pub fn size(&self) -> usize {
             (self.nrows * self.ncols)
                 .try_into()
@@ -384,6 +455,24 @@ mod test {
         let d = Delta(-37, 37);
         assert_eq!(d.nrows(), -37);
         assert_eq!(d.ncols(), 37);
+    }
+
+    #[test]
+    fn test_delta_rot_cw() {
+        let (left, right, up, down) = (Delta::LEFT, Delta::RIGHT, Delta::UP, Delta::DOWN);
+        assert_eq!(left.rot_cw(), up);
+        assert_eq!(up.rot_cw(), right);
+        assert_eq!(right.rot_cw(), down);
+        assert_eq!(down.rot_cw(), left);
+    }
+
+    #[test]
+    fn test_delta_rot_ccw() {
+        let (left, right, up, down) = (Delta::LEFT, Delta::RIGHT, Delta::UP, Delta::DOWN);
+        assert_eq!(left.rot_ccw(), down);
+        assert_eq!(down.rot_ccw(), right);
+        assert_eq!(right.rot_ccw(), up);
+        assert_eq!(up.rot_ccw(), left);
     }
 
     #[test]
@@ -456,7 +545,7 @@ mod test {
     fn test_grid_new_i32() {
         let g: Grid<i32> = Grid::new(3, 3);
         for i in 0..9 {
-            assert_eq!(g.data[i], 0);
+            assert_eq!(g.raw_data()[i], 0);
         }
     }
 
@@ -464,7 +553,7 @@ mod test {
     fn test_grid_new_u32() {
         let g: Grid<u32> = Grid::new(3, 3);
         for i in 0..9 {
-            assert_eq!(g.data[i], 0);
+            assert_eq!(g.raw_data()[i], 0);
         }
     }
 
@@ -472,7 +561,7 @@ mod test {
     fn test_grid_new_char() {
         let g: Grid<char> = Grid::new(3, 3);
         for i in 0..9 {
-            assert_eq!(g.data[i], '\0');
+            assert_eq!(g.raw_data()[i], '\0');
         }
     }
 
@@ -480,7 +569,7 @@ mod test {
     fn test_grid_from_value_i32() {
         let g: Grid<i32> = Grid::from_value(3, 3, -37);
         for i in 0..9 {
-            assert_eq!(g.data[i], -37);
+            assert_eq!(g.raw_data()[i], -37);
         }
     }
 
@@ -488,7 +577,7 @@ mod test {
     fn test_grid_from_value_u32() {
         let g: Grid<u32> = Grid::from_value(3, 3, 37);
         for i in 0..9 {
-            assert_eq!(g.data[i], 37);
+            assert_eq!(g.raw_data()[i], 37);
         }
     }
 
@@ -496,7 +585,16 @@ mod test {
     fn test_grid_from_value_char() {
         let g: Grid<char> = Grid::from_value(3, 3, 'α');
         for i in 0..9 {
-            assert_eq!(g.data[i], 'α');
+            assert_eq!(g.raw_data()[i], 'α');
+        }
+    }
+
+    #[test]
+    fn test_grid_from_array_u8() {
+        let input = [&[0u8, 1, 2] as &[u8], &[3, 4, 5], &[6, 7, 8]];
+        let g = Grid::from_array(3, 3, &input[..]);
+        for (i, (_loc, &val)) in g.each_item().enumerate() {
+            assert_eq!(val, i.try_into().expect("should fit in u8"));
         }
     }
 
@@ -518,6 +616,30 @@ mod test {
     fn test_grid_u32_to_index_panic() {
         let g: Grid<u8> = Grid::new(3, 7);
         g.u32_to_index(3, 7);
+    }
+
+    #[test]
+    fn test_grid_transform_char_char() {
+        let s = "
+abc
+def
+ghi";
+        let g = Grid::parse_char_grid(s.trim());
+        let s2 = "
+ABC
+DEF
+GHI";
+        let expected = Grid::parse_char_grid(s2);
+        let g2 = g.transform(|(_loc, c)| c.to_ascii_uppercase());
+        assert_eq!(g2, expected);
+    }
+
+    #[test]
+    fn test_grid_transform_int_int() {
+        let g: Grid<i32> = Grid::new(3, 3);
+        let g2 = g.transform(|(loc, val)| loc.row() + loc.col());
+        let expected = &[&[0, 1, 2] as &[i32], &[1, 2, 3], &[2, 3, 4]];
+        assert_eq!(g2, Grid::from_array(3, 3, expected));
     }
 
     #[test]
