@@ -93,14 +93,15 @@ impl Problem {
 /// Run the merging algorithm to completion
 fn merge_ranges(ranges: Vec<IDRange>) -> Vec<IDRange> {
     let mut ranges = ranges;
-    for _ in 0..20 {
+    let maxiter = 10;
+    for _ in 0..maxiter {
         let (these_ranges, num_merges) = merge_ranges_once(&ranges);
         if num_merges == 0 {
-            break;
+            return ranges.clone();
         }
         ranges = these_ranges;
     }
-    ranges.clone()
+    panic!("did not complete merge in {maxiter} iterations");
 }
 
 /// Run a single pass of the range merging algorithm
