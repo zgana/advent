@@ -62,6 +62,8 @@ where
 
     /// Creates a String representation of the grid with horizontal and vertical padding.
     pub fn as_padded_string(&self, w: usize, h: usize) -> String {
+        let w = w + 1;
+        let h = h + 1;
         let mut out = String::with_capacity(self.capacity());
         for row in 0..self.height as i32 {
             for col in 0..self.width as i32 {
@@ -76,7 +78,7 @@ where
 
     /// String representation of the grid using one character per entry.
     pub fn as_dense_string(&self) -> String {
-        self.as_padded_string(1, 1)
+        self.as_padded_string(0, 0)
     }
 
     /// Ref to the value at some (row, col).
@@ -181,7 +183,7 @@ ghighighi
     #[test]
     fn test_grid_padded_string() {
         let g: Grid<u8> = Grid::new_u8(TEST_NUM_1).unwrap();
-        println!("\n{}", g.as_padded_string(3, 2));
+        println!("\n{}", g.as_padded_string(2, 1));
     }
 
     // ...
