@@ -27,7 +27,7 @@ where
     ///     - Do we want to handle n-wide grid entries from text input?
     ///     - What about delimited input, e.g. comma or tab separated values?
     pub fn from_text(text: &str, f: impl Fn(char) -> T) -> Result<Self, ParseError> {
-        let lines: Vec<_> = text.trim().split('\n').collect();
+        let lines: Vec<_> = text.trim_matches('\n').split('\n').collect();
 
         let height = lines.len();
         if height == 0 {
